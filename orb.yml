@@ -2,7 +2,7 @@ version: 2.1
 
 description: Delta ESLint Reports
 orbs:
-  dscar: naokikimura/dscar@0.0.6
+  dscar: naokikimura/dscar@0.0.10
 executors:
   default:
     description: Use a CircleCI convenience image to analyze code statically
@@ -15,8 +15,7 @@ commands:
       analysis-prepare:
         description: Specify the required steps before eslint if necessary
         type: steps
-        default:
-          - run: npm install --global eslint
+        default: []
       analysis-arguments:
         description: Arguments of eslint command
         type: string
@@ -26,6 +25,7 @@ commands:
         type: string
         default: "/tmp/test-results"
     steps:
+      - run: npm install --global eslint
       - dscar/execute:
           analysis-name: ESLint
           analysis-command: npx eslint
@@ -33,6 +33,7 @@ commands:
           analysis-arguments: << parameters.analysis-arguments >> -f junit
           calculate-options: --test-case-key='concat(@classname,"#",@name,"=>",normalize-space())'
           test-results-path: << parameters.test-results-path >>
+          analysis-exit-code-threshold: 2
 jobs:
   execute:
     description: Calculate the difference of ESLint results between HEAD branch and BASE branch
@@ -43,8 +44,7 @@ jobs:
       analysis-prepare:
         description: Specify the required steps before eslint if necessary
         type: steps
-        default:
-          - run: npm install --global eslint
+        default: []
       analysis-arguments:
         description: Arguments of eslint command
         type: string
