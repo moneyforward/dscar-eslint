@@ -79,7 +79,7 @@ commands:
                 analysis-arguments: << parameters.analysis-arguments >>
                 no-analysis-output-timeout: << parameters.no-analysis-output-timeout >>
                 redirecting-output: /dev/null
-          calculate-options: --test-case-key='concat(@classname,"#",@name,"=>",normalize-space())'
+          calculate-options: --test-case-key=concat(@classname,"#",@name,"=>",normalize-space())
           test-results-path: << parameters.test-results-path >>
           should-save-analysis-results-as-artifacts: true
 
