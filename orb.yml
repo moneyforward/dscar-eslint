@@ -1,54 +1,115 @@
 version: 2.1
 
 description: Delta ESLint Reports
+
 orbs:
-  dscar: naokikimura/dscar@0.0.11
-executors:
-  default:
-    description: Use a CircleCI convenience image to analyze code statically
-    docker:
-    - image: circleci/node:lts
+  dscar: naokikimura/dscar@0.2.0
+
 commands:
-  execute:
-    description: Calculate the difference of ESLint results between HEAD branch and BASE branch
+  analyze:
+    description: Analyze code statically using ESLint
     parameters:
-      analysis-prepare:
-        description: Specify the required steps before eslint if necessary
-        type: steps
-        default: []
+      starting-points:
+        description: Specify the path of starting to search for files to analyze (Multiple paths can be specified by separating them with line feed)
+        type: string
+        default: "."
       analysis-arguments:
         description: Arguments of eslint command
         type: string
-        default: --ext '.js,.jsx,.ts,.tsx' .
+        default: --ext '.js,.jsx,.ts,.tsx'
+      no-analysis-output-timeout:
+        description: Elapsed time the command can run without output. The string is a decimal with unit suffix, such as “20m”, “1.25h”, “5s”
+        type: string
+        default: 10m
+      prepare:
+        description: Specify the required steps before analysis if necessary
+        type: steps
+        default: []
+      redirecting-output:
+        description: Specify "/dev/null" if you do not want to display the analysis results on the standard output
+        type: enum
+        enum: ["/dev/stdout", "/dev/stderr", "/dev/null"]
+        default: "/dev/stdout"
+    steps:
+      - dscar/analyze:
+          step-name: Analyze code statically using ESLint
+          prepare: << parameters.prepare >>
+          analysis-command: npx
+          analysis-arguments: eslint << parameters.analysis-arguments >> -f junit
+          starting-points: << parameters.starting-points >>
+          no-output-timeout: << parameters.no-analysis-output-timeout >>
+          redirecting-output: << parameters.redirecting-output >>
+  execute:
+    description: Calculate the difference of ESLint results between HEAD branch and BASE branch
+    parameters:
+      prepare-to-execute:
+        description: Specify the required steps before execute if necessary
+        type: steps
+        default: []
+      prepare-to-analyze:
+        description: Specify the required steps before analysis if necessary
+        type: steps
+        default: []
+      starting-points:
+        description: Specify the path of starting to search for files to analyze (Multiple paths can be specified by separating them with line feed)
+        type: string
+        default: "."
+      analysis-arguments:
+        description: Arguments of eslint command
+        type: string
+        default: --ext '.js,.jsx,.ts,.tsx'
+      no-analysis-output-timeout:
+        description: Elapsed time the command can run without output. The string is a decimal with unit suffix, such as “20m”, “1.25h”, “5s”
+        type: string
+        default: 10m
       test-results-path:
         description: Specify the value of the path parameter in the store_test_results step if you need to change it
         type: string
         default: "/tmp/test-results"
     steps:
-      - run: npm install --global eslint
       - dscar/execute:
+          prepare-to-execute:
+            - run: sudo npm install --global eslint
+            - steps: << parameters.prepare-to-execute >>
           analysis-name: ESLint
-          analysis-command: npx eslint
-          analysis-prepare: << parameters.analysis-prepare >>
-          analysis-arguments: << parameters.analysis-arguments >> -f junit
+          analyze:
+            - analyze:
+                prepare: << parameters.prepare-to-analyze >>
+                starting-points: << parameters.starting-points >>
+                analysis-arguments: << parameters.analysis-arguments >>
+                no-analysis-output-timeout: << parameters.no-analysis-output-timeout >>
+                redirecting-output: /dev/null
           calculate-options: --test-case-key='concat(@classname,"#",@name,"=>",normalize-space())'
           test-results-path: << parameters.test-results-path >>
-          analysis-exit-code-threshold: 2
+          should-save-analysis-results-as-artifacts: true
+
 jobs:
   execute:
     description: Calculate the difference of ESLint results between HEAD branch and BASE branch
     parameters:
       executor:
         type: executor
-        default: default
-      analysis-prepare:
-        description: Specify the required steps before eslint if necessary
+        default: dscar/default
+      prepare-to-execute:
+        description: Specify the required steps before execute if necessary
         type: steps
         default: []
+      prepare-to-analyze:
+        description: Specify the required steps before analysis if necessary
+        type: steps
+        default: []
+      starting-points:
+        description: Specify the path of starting to search for files to analyze (Multiple paths can be specified by separating them with line feed)
+        type: string
+        default: "."
       analysis-arguments:
         description: Arguments of eslint command
         type: string
-        default: --ext '.js,.jsx,.ts,.tsx' .
+        default: --ext .js,.jsx,.ts,.tsx
+      no-analysis-output-timeout:
+        description: Elapsed time the command can run without output. The string is a decimal with unit suffix, such as “20m”, “1.25h”, “5s”
+        type: string
+        default: 10m
       test-results-path:
         description: Specify the value of the path parameter in the store_test_results step if you need to change it
         type: string
@@ -56,6 +117,9 @@ jobs:
     executor: << parameters.executor >>
     steps:
       - execute:
-          analysis-prepare: << parameters.analysis-prepare >>
+          prepare-to-execute: << parameters.prepare-to-execute >>
+          prepare-to-analyze: << parameters.prepare-to-analyze >>
+          starting-points: << parameters.starting-points >>
           analysis-arguments: << parameters.analysis-arguments >>
+          no-analysis-output-timeout: << parameters.no-analysis-output-timeout >>
           test-results-path: << parameters.test-results-path >>
