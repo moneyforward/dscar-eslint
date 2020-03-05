@@ -3,7 +3,23 @@ version: 2.1
 description: Delta ESLint Reports
 
 orbs:
-  dscar: naokikimura/dscar@0.5.0
+  dscar: naokikimura/dscar@0.5.1
+
+executors:
+  default:
+    description: Default analysis execution environment
+    parameters:
+      docker-image:
+        description: Specify the image used to execute the analysis
+        type: string
+        default: circleci/node
+      resource_class:
+        description: Amount of CPU and RAM allocated to each container in a job.
+        type: string
+        default: small
+    docker:
+      - image: << parameters.docker-image >>
+    resource_class: << parameters.resource_class >>
 
 commands:
   analyze:
@@ -104,7 +120,7 @@ jobs:
       executor:
         description: Specify the image used to execute analysis
         type: executor
-        default: dscar/default
+        default: default
       is-target-branch-base:
         description: Check-out the BASE branch if true is specified
         type: boolean
@@ -140,7 +156,7 @@ jobs:
       executor:
         description: Specify the image used to execute analysis
         type: executor
-        default: dscar/default
+        default: default
       calculate:
         description: Specify the steps for calculating the difference
         type: steps
@@ -169,7 +185,7 @@ jobs:
       executor:
         description: Specify the image used to execute analysis
         type: executor
-        default: dscar/default
+        default: default
       analyze:
         description: Specify analysis steps
         type: steps
