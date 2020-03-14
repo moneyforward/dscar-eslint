@@ -1,0 +1,3 @@
+description: Install ESLint
+steps:
+  - run: sudo npm install --global eslint
