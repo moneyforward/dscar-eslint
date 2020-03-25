@@ -54,12 +54,16 @@ steps:
             name: export TRANSFORMATION_ARGUMENTS
             command: |
               set -x
-              cat \<<-EOT >> $BASH_ENV
-              export TRANSFORMATION_ARGUMENTS=(
-                -srM
-                'flatten | map(@html "<file name=\"\(.filePath)\">" + (.messages | map(@html "<error source=\"\(.ruleId)\" message=\"\(.message)\" line=\"\(.line)\" column=\"\(.column)\" severity=\"\(if .severity == 2 then "error" else "warning" end)\" />") | join("")) + "</file>") | "<checkstyle>\(join(""))</checkstyle>"'
-              )
+              FILTER="$(
+              cat \<<-EOT | tr -s ' \n' ' '
+              flatten | map(@html "<file name=\"\(.filePath)\">" + ( .messages | map(
+                @html "<error source=\"\(.ruleId)\" message=\"\(.message)\" line=\"\(.line)\"
+                  column=\"\(.column)\" severity=\"\(if .severity == 2 then "error" else "warning" end)\" />"
+              ) | join("")) + "</file>") | "<checkstyle>\(join(""))</checkstyle>"
               EOT
+              )"
+              declare -ax TRANSFORMATION_ARGUMENTS=( -srM "$FILTER" )
+              echo "$(declare -p TRANSFORMATION_ARGUMENTS)" >> $BASH_ENV
         - steps: << parameters.prepare >>
       analysis-command: npx
       analysis-arguments: eslint << parameters.analysis-arguments >> -f json --quiet
