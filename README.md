@@ -1,5 +1,7 @@
 # dscar-eslint
 
+[![CircleCI](https://circleci.com/gh/moneyforward/dscar-eslint.svg?style=svg)](https://circleci.com/gh/moneyforward/dscar-eslint)
+
 Delta [ESLint](https://eslint.org) reports running on CircleCI
 
 See https://circleci.com/orbs/registry/orb/moneyforward/dscar-eslint for details.
